@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pour Naceri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS (Le Style) --- */
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffebee; /* Fond rose très pâle */
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+        }
+
+        .card {
+            background: white;
+            padding: 60px 40px; /* Surface agrandie */
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px; /* Carte plus large */
+            width: 90%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px; /* Hauteur min pour laisser de la place au bouton qui bouge */
+        }
+
+        /* --- Le Coeur en CSS pur --- */
+        .heart-container {
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .heart {
+            background-color: #e91e63;
+            display: inline-block;
+            height: 50px;
+            margin: 0 10px;
+            position: relative;
+            transform: rotate(-45deg);
+            width: 50px;
+        }
+
+        .heart:before,
+        .heart:after {
+            content: "";
+            background-color: #e91e63;
+            border-radius: 50%;
+            height: 50px;
+            position: absolute;
+            width: 50px;
+        }
+
+        .heart:before {
+            top: -25px;
+            left: 0;
+        }
+
+        .heart:after {
+            left: 25px;
+            top: 0;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            color: #c2185b;
+            font-size: 28px;
+            margin: 20px 0 40px 0;
+            line-height: 1.4;
+        }
+
+        .buttons-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            position: relative; /* Important pour le positionnement absolu du bouton Non */
+            min-height: 60px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        #yesBtn {
+            background-color: #e91e63;
+            color: white;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+            z-index: 10; /* Le OUI reste au dessus */
+        }
+
+        #noBtn {
+            background-color: #e0e0e0;
+            color: #555;
+            position: relative; /* Deviendra absolute via JS */
+        }
+
+        /* Texte du bas */
+        .footer-text {
+            margin-top: 50px;
+            font-size: 14px;
+            color: #9e9e9e;
+            font-style: italic;
+        }
+
+        /* Message de succès caché au début */
+        #successMessage {
+            display: none;
+            color: #d81b60;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        
+        <div class="heart-container" id="heartIcon">
+            <div class="heart"></div>
+        </div>
+
+        <h1 id="question">Veux-tu être ma valentine ?</h1>
+
+        <div class="buttons-container" id="btnContainer">
+            <button id="yesBtn">Oui</button>
+            <button id="noBtn">Non</button>
+        </div>
+
+        <p class="footer-text" id="hintText">le non peut être timide des fois 👀</p>
+
+        <div id="successMessage">
+            YAY ! Trop hâte ! ❤️ <br>
+            <span style="font-size: 100px;">😘</span>
+        </div>
+
+    </div>
+
+    <script>
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const question = document.getElementById('question');
+        const heartIcon = document.getElementById('heartIcon');
+        const btnContainer = document.querySelector('.buttons-container');
+        const hintText = document.getElementById('hintText');
+        const successMessage = document.getElementById('successMessage');
+        const card = document.querySelector('.card');
+
+        let noClickCount = 0;
+        let yesScale = 1; // Taille initiale du bouton Oui
+
+        // Fonction pour faire bouger le bouton NON et grossir le OUI
+        function evadeAndGrow() {
+            noClickCount++;
+
+            // 1. Faire grossir le bouton OUI
+            yesScale += 0.3; // Grossit de 30% à chaque fois
+            yesBtn.style.transform = `scale(${yesScale})`;
+
+            // 2. Déplacer le bouton NON (Mode "Chasse")
+            // On le passe en absolute pour qu'il sorte du flux
+            noBtn.style.position = 'absolute';
+            
+            // Calculer les limites de la carte pour qu'il reste dedans mais bouge
+            const cardRect = card.getBoundingClientRect();
+            const btnRect = noBtn.getBoundingClientRect();
+            
+            // On définit une zone aléatoire dans la carte
+            // On enlève la taille du bouton pour ne pas dépasser
+            const maxX = cardRect.width - btnRect.width - 20; 
+            const maxY = cardRect.height - btnRect.height - 20;
+
+            const randomX = Math.random() * maxX - (maxX / 2); // Centré
+            const randomY = Math.random() * maxY - (maxY / 2);
+
+            noBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+
+            // 3. Vérifier si on a atteint 5 tentatives
+            if (noClickCount >= 5) {
+                noBtn.style.display = 'none'; // Disparition
+                hintText.innerText = "Oups, il est parti... 🤷‍♂️";
+            }
+        }
+
+        // Événements pour le bouton "Non" (survol + clic pour mobile)
+        noBtn.addEventListener('mouseover', evadeAndGrow);
+        noBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // Empêche le clic standard
+            evadeAndGrow();
+        });
+
+        // Événement pour le bouton "Oui"
+        yesBtn.addEventListener('click', () => {
+            // Cacher les éléments initiaux
+            question.style.display = 'none';
+            btnContainer.style.display = 'none';
+            hintText.style.display = 'none';
+            
+            // Afficher le message de succès
+            successMessage.style.display = 'block';
+            
+            // Changer la couleur de fond pour fêter ça
+            document.body.style.backgroundColor = "#f8bbd0";
+        });
+
+    </script>
+</body>
+</html>
